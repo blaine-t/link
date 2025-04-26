@@ -8,27 +8,28 @@ struct FormBody {
     url: String
 }
 
-const TABLE: TableDefinition<&str, String> = TableDefinition::new("my_data");
+const TABLE: TableDefinition<String, String> = TableDefinition::new("my_data");
 
 #[get("/{name}")]
 async fn serve_link(key: web::Path<String>, db: web::Data<Database>) -> impl Responder {
     let read_txn = db.begin_read().unwrap();
     let table = read_txn.open_table(TABLE).unwrap();
-    let result = table.get(key.as_str()).unwrap().unwrap().value();
-    println!("{}", result);
+    let result = table.get(key.into_inner()).unwrap().unwrap().value();
+    
     Redirect::to(result).permanent()
 }
 
 #[post("/{name}")]
 async fn create_link(key: web::Path<String>, web::Form(form): web::Form<FormBody>, db: web::Data<Database>) -> impl Responder {
-    let write_txn = db.begin_write().unwrap();
     let value = &form.url;
+    
+    let write_txn = db.begin_write().unwrap();
     {
         let mut table = write_txn.open_table(TABLE).unwrap();
-        table.insert(key.as_str(), value).unwrap();
+        table.insert(key.into_inner(), value).unwrap();
     }
     write_txn.commit().unwrap();
-    println!("{}", value);
+
     HttpResponse::Ok().finish()
 }
 
