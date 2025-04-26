@@ -1,12 +1,8 @@
+use actix_files as fs;
 use actix_web::{get, web, App, HttpServer, Responder};
 use redb::{Database, Error, TableDefinition};
 
 const TABLE: TableDefinition<&str, &str> = TableDefinition::new("my_data");
-
-#[get("/")]
-async fn index() -> impl Responder {
-    "Hello, World!"
-}
 
 #[get("/{name}")]
 async fn hello(name: web::Path<String>) -> impl Responder {
@@ -33,7 +29,7 @@ fn db() -> Result<(), Error> {
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     let _ = db();
-    HttpServer::new(|| App::new().service(index).service(hello))
+    HttpServer::new(|| App::new().service(hello).service(fs::Files::new("/", "./public")))
         .bind(("127.0.0.1", 8080))?
         .run()
         .await
